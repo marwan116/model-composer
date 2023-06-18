@@ -16,11 +16,12 @@ class Package:
     test_dependencies: List[str]
     locations: List[str]
 
+
 package = Package(
     base_python="3.8",
     python_versions=["3.8"],
     pip_version="23.0.1",
-    build_dependencies=["poetry-core", "setuptools"],    
+    build_dependencies=["poetry-core", "setuptools"],
     test_dependencies=[
         "coverage[toml]",
         "pytest",
@@ -33,7 +34,6 @@ package = Package(
         "tests",
     ],
 )
-
 
 
 @noxsession(python=package.base_python, venv_params=["--pip", package.pip_version])
@@ -58,7 +58,7 @@ def mypy(session: Session) -> None:
     session.install(*package.build_dependencies)
     args = session.posargs or package.locations
     deps = [
-        ".",
+        ".[all]",
         "mypy",
         "nox-poetry",
     ]
