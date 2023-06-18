@@ -1,59 +1,8 @@
 """Interface of model-composer."""
 from abc import ABC, abstractmethod
-from typing import Any, Literal, Protocol
+from typing import Protocol
 
-from pydantic import BaseModel
-
-from model_composer._utils import DictLikeBaseModel, ListLikeBaseModel
-
-InputStr = str
-
-
-class CompSpec(
-    DictLikeBaseModel[Literal["in", "notin", "eq", "ne", "ge", "gt", "le", "lt"], Any]
-):
-    """Specification of a comparison operator."""
-
-
-class _MaskSpec(DictLikeBaseModel[InputStr, CompSpec]):
-    """A mapping of inputs to their comparison specs."""
-
-
-class MaskSpec(BaseModel):
-    """Specification for a slice - the mask and model."""
-
-    name: str
-    spec: _MaskSpec
-
-
-class _ModelSpec(BaseModel):
-    type: Literal["tensorflow", "sklearn"]
-    path: str
-
-
-class ModelSpec(BaseModel):
-    """Specification of a model."""
-
-    name: str
-    spec: _ModelSpec
-
-
-class SliceSpec(BaseModel):
-    """Specification for a slice."""
-
-    mask: MaskSpec
-    model: ModelSpec
-
-
-class SliceSpecList(ListLikeBaseModel[SliceSpec]):
-    """A list of slice specifications."""
-
-
-class ComposedModelDefinition(BaseModel):
-    """Definition of a composed model."""
-
-    name: str
-    spec: SliceSpecList
+from model_composer.spec import ModelComposerSpec
 
 
 class Model(Protocol):
@@ -64,5 +13,16 @@ class ModelComposerInterface(ABC):
     """Interface of a model composer."""
 
     @abstractmethod
-    def build(self, definition: ComposedModelDefinition) -> Model:
-        """Build a model object given a definition."""
+    def build(self, spec: ModelComposerSpec) -> Model:
+        """Build a model object given a spec."""
+
+    def from_yaml(self, path: str) -> Model:
+        """Build a model object given a path to a YAML file."""
+        import yaml
+
+        with open(path, "r") as f:
+            spec_dict = yaml.safe_load(f)
+
+        spec = ModelComposerSpec.parse_obj(spec_dict)
+
+        return self.build(spec)
